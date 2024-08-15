@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Destination Details</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .hero-image {
+            background: url('https://via.placeholder.com/1920x600') no-repeat center center;
+            background-size: cover;
+            height: 400px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .map {
+            width: 100%;
+            height: 400px;
+        }
+        .card{
+            display:flex;
+            align-items: center;
+            margin-left: 320px;
+            width:500px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">Movie Details</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item active">
+                    <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">About</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Contact</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+
+    <!-- Main Content -->
+    <div class="container my-5">
+        <div class="row">
+            <div class="col-md-6">
+                <!-- Destination Card -->
+                <div class="card">
+                    <img src="{{ dests.image.url }}" class="card-img-top" alt="Destination Image">
+                    <div class="card-body">
+                        <h5 class="card-title">TITLE:{{ dests.Title }}</h5>
+                        <p>RELEASE DATE:{{ dests.Relesedate }}</p>
+                        <p>ACTORS: {{ dests.Actors }}</p>
+                        <p>REVIEWS: {{ dests.Reviews }}</p>
+                        <p class="card-text">Description: {{ dests.description }}</p>
+                        <a href="#" class="btn btn-primary">Trailer Link</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <!-- Map -->
+                <div id="map" class="map"></div>
+            </div>
+        </div>
+    </div>
+
+
+</body>
+</html>
+
