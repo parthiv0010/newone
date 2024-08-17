@@ -1,10 +1,15 @@
-from django.shortcuts import render,redirect
+from django.shortcuts import render,redirect,get_object_or_404
 from rest_framework.permissions import AllowAny
 from . models import *
 from rest_framework import generics
 from . serializers import *
 from . forms import *
 from django.contrib import messages
+import requests
+from django.http import HttpResponseForbidden
+from django.contrib.auth.decorators import login_required
+
+
 
 
 # Create your views here.
@@ -26,21 +31,35 @@ class DestDelete(generics.DestroyAPIView):
     queryset = Destinations.objects.all()
     serializer_class = DestSerializer
 
+class DestSearch(generics.ListAPIView):
+    queryset = Destinations.objects.all()
+    serializer_class = DestSerializer
 
+    def get_queryset(self):
+        name = self.kwargs.get('Title')
+        return Destinations.objects.filter(Title__icontains=name)
+
+@login_required
 def dest_create(request):
     if request.method == 'POST':
         form=DestForm(request.POST,request.FILES)
         if form.is_valid():
             try:
-                form.save()
-                api_url="http://127.0.0.1:8000/create/"
+                # Create an instance of the form but don't save to the database yet
+                destination = form.save(commit=False)
+
+                # Set the creator as the current logged-in user
+                destination.creator = request.user
+
+                # Save the destination to the database
+                destination.save()  # Now save the object
+                api_url="http://127.0.0.1:8000/home/create/"
                 data=form.cleaned_data
                 print(data)
 
                 response =requests.post(api_url,data=data,files={'image':request.FILES['image']})
                 if response.status_code == 400:
-                    messages.success(request,"destination created succesfully")
-                    return redirect('/')
+                    return redirect('listdest')
                 else:
                     messages.error(request,'error')
             except request.RequestException as e:
@@ -53,49 +72,93 @@ def dest_create(request):
     return render(request,"destcreate.html",{'form':form})
 
 def list_dest(request):
+    query = request.GET.get('q', '')  # Get the search query from the request
+    if query:
+        movies = Destinations.objects.filter(Title__icontains=query)  # Filter movies by title
+    else:
+        movies = Destinations.objects.all()  # Return all movies if no search query
+
+    return render(request, 'index.html', {'movies': movies, 'query': query})
+
+
     dest = Destinations.objects.all()
     return render(request,'index.html',{'dest':dest})
 
 
-
+@login_required
 def update_dest(request,id):
+    # Fetch the destination object based on the provided id
+    destination = get_object_or_404(Destinations, id=id)
+
+    # Check if the logged-in user is the creator of the destination
+    if destination.creator != request.user:
+        return HttpResponseForbidden("You are not allowed to edit this movie.")
+
+    # If the form is submitted via POST
     if request.method == 'POST':
-        Placename = request.POST['Placename']
-        Weather = request.POST['Weather']
-        State = request.POST['State']
-        district = request.POST['district']
-        print('Image Url',request.FILES.get('image'))
-        description = request.POST['description']
-        api_url = f"http://127.0.0.1:8000/update/{id}/"
-        data = {
-            "Title" : Placename,
-            "Relesedate" : Weather,
-            "Actors" : State,
-            "Reviews" : district,
-            "description" : description
-        }
-        files = {'image' : request.FILES.get("image")}
-        response = requests.put(api_url,data=data,files=files)
-        if response.status_code == 200:
-            messages.success(request,'Recipee updated')
-            return redirect('/')
+        # Bind the form to the POST data and files, and associate it with the existing instance
+        form = DestForm(request.POST, request.FILES, instance=destination)
+
+        # Validate the form data
+        if form.is_valid():
+            # Save the updated destination object to the database
+            form.save()
+            # Display a success message and redirect to the destination list page
+            messages.success(request, 'Movie updated successfully.')
+            return redirect('listdest')
         else:
-            messages.error(request,"error submitting data to the Rest api")
-    return render(request,'destinationupdate.html')
-
-def dest_fetch(request,id):
-    dests = Destinations.objects.get(id=id)
-    return render(request,'dest_fetch.html',{'dests':dests})
-
-def dest_delete(request,id):
-    api_url = f"http://127.0.0.1:8000/delete/{id}/"
-    response = requests.delete(api_url)
-    if response.status_code == 200:
-        print(f'Item with id {id} has been deleted')
-
+            # Display an error message if the form is invalid
+            messages.error(request, 'Form is not valid. Please correct the errors below.')
     else:
-        print(f'Failed to delete item {response.status_code}')
-    return redirect('/')
+        # If the request is a GET request, pre-populate the form with the destination data
+        form = DestForm(instance=destination)
+
+    # Render the update page with the form
+    return render(request, 'destinationupdate.html', {'form': form, 'destination': destination})
+
+def dest_fetch(request, id):
+    dests = get_object_or_404(Destinations, id=id)
+    return render(request, 'dest_fetch.html', {'dests': dests})
+
+@login_required
+def dest_delete(request, id):
+    destination = get_object_or_404(Destinations, id=id)
+
+    # Check if the logged-in user is the creator of the destination
+    if destination.creator != request.user:
+        return HttpResponseForbidden("You are not allowed to delete this movie.")
+    api_url = f"http://127.0.0.1:8000/home/delete/{id}/"
+
+    try:
+        response = requests.delete(api_url)
+
+        if response.status_code == 200:
+            print(f'Item with id {id} has been deleted')
+        else:
+            print(f'Failed to delete item: {response.status_code} - {response.text}')
+
+    except requests.RequestException as e:
+        print(f'An error occurred: {e}')
+
+    return redirect('listdest')
+
+
+@login_required
+def add_review(request, destination_id):
+    destination = get_object_or_404(Destinations, id=destination_id)
+
+    if request.method == 'POST':
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.destination = destination
+            review.user = request.user
+            review.save()
+            return redirect('listdest')
+    else:
+        form = ReviewForm()
+
+    return render(request, 'add_review.html', {'form': form, 'destination': destination})
 
 
 

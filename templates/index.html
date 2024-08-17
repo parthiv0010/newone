@@ -41,41 +41,58 @@
                 <li class="nav-item">
                     <a class="nav-link" href="#">Contact</a>
                 </li>
+                <li>
+                    <a href="{% url 'logout' %}">Logout</a>
+                </li>
 
                 <li>
                     <a class="btn btn-success" href="{% url 'createdest' %}">Create New Movie</a><br><br>
                 </li>
-                <li>
-                    <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-                </li>
+
+
+
             </ul>
         </div>
     </nav>
+<!-- destinations/list_dest.html -->
+
+<form method="get" action="{% url 'listdest' %}">
+    {% csrf_token %}
+    <nav class="navbar bg-body-tertiary">
+  <div class="container-fluid">
+    <form class="d-flex" role="search">
+      <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name="q" value="{{ query }}">
+      <button class="btn btn-outline-success" type="submit">Search</button>
+    </form>
+  </div>
+</nav>
+</form>
+
 
 <h1><u>AVAILABLE MOVIES</u></h1>
 
 
      <div class="container my-5">
         <div class="row">
-            {% for dests in dest %}
+            {% for movie in movies %}
             <div class="col-md-6">
                 <!-- Destination Card -->
                 <div class="card">
-                    <img src="{{ dests.image.url }}" class="card-img-top" alt="Destination Image">
+                    <img src="{{ movie.image.url }}" class="card-img-top" alt="Destination Image">
                     <div class="card-body">
-                        <h5 class="card-title">TITLE:{{ dests.Title }}</h5>
-                        <p>RELEASE DATE:{{ dests.Relesedate }}</p>
-                        <p>ACTORS: {{ dests.Actors }}</p>
-                        <a href="{% url 'destfetch' dests.id %}" class="btn btn-primary">LEARN MORE</a>
-                        <a href="{% url 'updatedest' dests.id %}" class="btn btn-primary">UPDATE</a>
-                        <a href="{% url 'destdelete' dests.id %}" class="btn btn-primary">DELETE</a>
+                        <h5 class="card-title">TITLE:{{ movie.Title }}</h5>
+                        <p>RELEASE DATE:{{ movie.Relesedate }}</p>
+                        <p>ACTORS: {{ movie.Actors }}</p>
+                        <a href="{% url 'destfetch' movie.id %}" class="btn btn-primary">LEARN MORE</a>
+                        <a href="{% url 'updatedest' movie.id %}" class="btn btn-primary">UPDATE</a>
+                        <a href="{% url 'destdelete' movie.id %}" class="btn btn-primary">DELETE</a>
+                        <a href="{% url 'add_review' movie.id %}" class="btn btn-primary">Add Review</a>
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
     </div>
-
 
 </body>
 </html>

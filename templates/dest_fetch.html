@@ -64,15 +64,26 @@
                         <h5 class="card-title">TITLE:{{ dests.Title }}</h5>
                         <p>RELEASE DATE:{{ dests.Relesedate }}</p>
                         <p>ACTORS: {{ dests.Actors }}</p>
-                        <p>REVIEWS: {{ dests.Reviews }}</p>
                         <p class="card-text">Description: {{ dests.description }}</p>
-                        <a href="#" class="btn btn-primary">Trailer Link</a>
+                        <h2>Reviews:</h2>
+                {% if dests.reviews.all %}
+                    {% for review in dests.reviews.all %}
+                        <div>
+                            <strong>User:{{ review.user.username }}</strong>
+                            <p>Rating: {{ review.rating }}</p>
+                            <p>{{ review.review_text }}</p>
+                            <p>Posted on: {{ review.created_at }}</p>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No reviews yet.</p>
+                {% endif %}
+
                     </div>
                 </div>
             </div>
             <div class="col-md-6">
-                <!-- Map -->
-                <div id="map" class="map"></div>
+               <
             </div>
         </div>
     </div>
