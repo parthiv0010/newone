@@ -39,10 +39,9 @@ class DestSearch(generics.ListAPIView):
         name = self.kwargs.get('Title')
         return Destinations.objects.filter(Title__icontains=name)
 
-@login_required
 def dest_create(request):
     if request.method == 'POST':
-        form=DestForm(request.POST,request.FILES)
+        form = DestForm(request.POST, request.FILES)
         if form.is_valid():
             try:
                 # Create an instance of the form but don't save to the database yet
@@ -53,23 +52,24 @@ def dest_create(request):
 
                 # Save the destination to the database
                 destination.save()  # Now save the object
-                api_url="http://127.0.0.1:8000/home/create/"
-                data=form.cleaned_data
-                print(data)
 
-                response =requests.post(api_url,data=data,files={'image':request.FILES['image']})
-                if response.status_code == 400:
-                    return redirect('listdest')
-                else:
-                    messages.error(request,'error')
-            except request.RequestException as e:
-                messages.error(request,f'error during api request{str(e)}')
+                # Display success message
+                messages.success(request, "Movie created successfully")
+
+                # Redirect to the list of destinations or any other page
+                return redirect('listdest')
+            except Exception as e:
+                # Catch any general exceptions and display an error message
+                messages.error(request, f'An error occurred: {str(e)}')
         else:
-            messages.error(request,'Form is not valid')
+            # If the form is invalid, display an error message
+            messages.error(request, 'Form is not valid. Please correct the errors below.')
     else:
-        form=DestForm()
+        # If the request method is GET, display a blank form
+        form = DestForm()
 
-    return render(request,"destcreate.html",{'form':form})
+    # Render the form template
+    return render(request, "destcreate.html", {'form': form})
 
 def list_dest(request):
     query = request.GET.get('q', '')  # Get the search query from the request
@@ -122,25 +122,25 @@ def dest_fetch(request, id):
 
 @login_required
 def dest_delete(request, id):
+    # Fetch the destination object based on the provided id
     destination = get_object_or_404(Destinations, id=id)
 
     # Check if the logged-in user is the creator of the destination
     if destination.creator != request.user:
         return HttpResponseForbidden("You are not allowed to delete this movie.")
-    api_url = f"http://127.0.0.1:8000/home/delete/{id}/"
 
-    try:
-        response = requests.delete(api_url)
+    if request.method == 'POST':
+        # Delete the destination from the database
+        destination.delete()
 
-        if response.status_code == 200:
-            print(f'Item with id {id} has been deleted')
-        else:
-            print(f'Failed to delete item: {response.status_code} - {response.text}')
+        # Display a success message
+        messages.success(request, "Movie deleted successfully.")
 
-    except requests.RequestException as e:
-        print(f'An error occurred: {e}')
+        # Redirect to the list of destinations or any other page
+        return redirect('listdest')
 
-    return redirect('listdest')
+    # Render a confirmation page before deleting
+    return render(request, 'confirm_delete.html', {'destination': destination})
 
 
 @login_required
